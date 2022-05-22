@@ -1,0 +1,17 @@
+#if you are using repos to enalbe via subscription manager
+---
+- name: Enable Default Repo to get Notification in Satellite
+  hosts:  all
+  become: true
+  tasks:
+    - name: Enable Repo for EL 6
+      command:  'subscription-manager repos --enable=rhel-6-server-rpms' 
+      when:
+       - ansible_distribution_major_version == "6"
+
+    - name: Enable Repo for EL 7
+      command:  'subscription-manager repos --enable=rhel-7-server-rpms' 
+      when:
+        - ansible_distribution_major_version == "7"
+    - name: Refresh Repos
+      command:  'subscription-manager repos'

@@ -1,0 +1,32 @@
+#Use below command to get Encrypt password
+- hosts: all
+  tasks:
+      - name: Create user
+        user: name=secops comment="Information Security" shell=/bin/bash
+#      - name: Locking Password
+#        command: 'passwd –l secops'
+      - file:
+          path: /home/secops/.ssh
+          owner: secops
+          group: secops
+          mode: 0700
+          state: directory
+
+      - copy:
+          src: authorized_keys
+          dest: /home/secops/.ssh/
+          owner: secops
+          group: secops
+          mode: 0600
+      
+      - name: Sudoers | update sudoers file and validate
+        lineinfile: "dest=/etc/sudoers
+          insertafter=EOF
+          line='#Information Security- This Entry and ID can delete after somedays'
+          state=present"
+
+      - name: Sudoers | update sudoers file and validate
+        lineinfile: "dest=/etc/sudoers
+          insertafter=EOF
+          line='secops ALL=(ALL) NOPASSWD: ALL'
+          state=present"

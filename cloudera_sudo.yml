@@ -1,0 +1,13 @@
+
+---
+- name: Add cloudadmin ID for sudo privilage
+  hosts: all
+  become: yes
+  tasks:
+    - name: Append Lines to get sudo Privilege for cloudadmin
+      lineinfile:
+        path: /etc/sudoers
+        backup: yes
+        line: '{{ item  }}'
+      with_items:
+        - 'cloudadmin ALL=(ALL)   ALL'

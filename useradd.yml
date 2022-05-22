@@ -1,0 +1,19 @@
+---
+- name: Create  User with 
+  hosts: all
+  become: true
+  tasks:
+    - name: Create  user
+      user:
+        name: username
+        comment: "Username"
+        shell: /bin/bash
+        group: group1
+        password: $6$random_salt$IRtv35C7iLHvTdddddddddddddddddddddddddddd7Xsf/4.kj5DyTgDnO/aDiMO. 
+        state: present
+      ignore_errors: yes
+    - name: Create content in sudo file
+      lineinfile:
+        path: /etc/sudoers
+        line: 'username        ALL=(ALL)       /bin/su - oracle, /bin/su - weblogic, /bin/su - apache'
+

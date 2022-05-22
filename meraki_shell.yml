@@ -1,0 +1,104 @@
+#this playbook helps you to update IPaddress to your S3 bucket for granting access to your users in various locations. However, this was written with example from API output
+# without using Ansible template , just go with legacy Linux cmd :)
+---
+  - hosts:  localhost
+    connection: local
+    gather_facts: no
+    vars:
+      content:  "{{ lookup('file', './output.csv') }}"
+      orgid:  "{{ lookup('file', './orgid.txt') }}"
+    tasks:
+      - name: Lookup
+        uri:
+          url:  https://api.meraki.com/api/v0/organizations/{{ orgid }}/deviceStatuses
+          method: GET
+          return_content: yes
+          headers:
+            X-Cisco-Meraki-API-Key: "{{ lookup('file','./merakikey.txt') }}"
+            Content-Type: 'application/json'
+        register: output
+
+      - name: Remove Files
+        file:
+          path: "{{ item }}"
+          state:  absent
+        loop:
+          - ./ansible.csv
+          - ./output.csv
+          - ./policy.json
+        
+      - set_fact:
+          myvar:  "{{ (output.json) | map(attribute='publicIp') | list | unique }}"
+
+      - lineinfile: 
+          create: yes 
+          dest: ./ansible.csv 
+          line: "{{myvar}}" 
+          state:  present
+      
+      - name: Add Newline
+        replace:  path="./ansible.csv" regexp=','  replace="\n"
+      
+      - name: Remove Comma
+        replace:  path="./ansible.csv" regexp=','  replace=""
+
+      - name: Remove Single Quote
+        replace:  path="./ansible.csv" regexp='\''  replace=""
+      
+      - name: Remove brackets G
+        replace:  path="./ansible.csv" regexp='\['  replace=""
+      - name: Remove brackets G
+        replace:  path="./ansible.csv" regexp='\]'  replace=""
+      - name: Remove None G
+        replace:  path="./ansible.csv" regexp='None'  replace=""
+      - name: Remove null G
+        replace:  path="./ansible.csv" regexp='null'  replace=""
+      - name: Remove Doublespace G
+        replace:  path="./ansible.csv" regexp=" *"  replace=""
+      - name: Remove Empty Lines
+        lineinfile: 
+          dest: "./ansible.csv"
+          regexp: '(^\s*$)'
+          state:  absent
+      - name: Adding Final format
+        script: ./bashh.sh
+
+
+      - name: copy .j2 becomes json
+        template:
+          src:  ./template/policy.json.j2
+          dest: ./policy.json
+
+      - name: Update S3 Bucket Policy
+        s3_bucket:
+          name: company-it-policy-test
+          policy: "{{ lookup('file','./policy.json') }}"
+          state:  present
+          aws_access_key: "{{ lookup('file','acc.txt') }}" 
+          aws_secret_key: "{{ lookup('file','sec.txt') }}"
+
+      - name: replace all doublequotes
+        replace:  path="./output.csv" regexp='"'  replace=""
+
+      - name: replace all comma
+        replace:  path="./output.csv" regexp=','  replace=""
+
+      - name: Append Timestamp
+        command:  "mv ./output.csv ./output/output-{{ lookup('pipe', 'date +%Y%m%d%H%M') }}.csv"
+
+      - name: S3 PUT
+        aws_s3:
+          aws_access_key: "{{ lookup('file','acc.txt') }}" 
+          aws_secret_key: "{{ lookup('file','sec.txt') }}"
+          bucket: company-it-policy-test
+          object: /IPList/ListofIPaddress.csv
+          src:  "{{ item }}"
+          mode: put
+        with_fileglob:
+          - "./output/output-{{ lookup('pipe', 'date +%Y%m%d%H%M') }}.csv"
+
+
+
+#Bash script
+# #!/bin/bash
+# cat ansible.csv | sed -e 's/^/"/g'| sed -e 's/$/"/g'| sed -e "s/ //g"| sed -e '$!s/$/,/' > output.csv

@@ -1,0 +1,84 @@
+
+---
+- name: Install/Upgrade Katello-Agents and dependencies, bring up goferd service for RHEL 6 & 7
+  hosts:  all
+  become: true
+  tasks:
+#    - name: 1Remove previous version of installed katello-ca-consumer
+#      yum:
+#        name: katello-ca-consumer-satelite.example.com-1.0-1.noarch
+#        state:  absent
+#      ignore_errors: yes
+#    - name: 2Remove previous version of installed katello-ca-consumer
+#      yum:
+#        name: katello-ca-consumer-satelite.example.com-1.0-2.noarch
+#        state:  absent
+#      ignore_errors: yes
+#    - name: 3Remove previous version of installed katello-ca-consumer
+#      yum:
+#        name: katello-ca-consumer-satelite.example.com-1.0-3.noarch
+#        state:  absent
+#      ignore_errors: yes
+
+#    - name: Installing Latest katello-ca-consumer
+#      command: 'rpm -ivh http://satelite.example.com/pub/katello-ca-consumer-satelite.example.com-1.0-4.noarch.rpm'
+#      ignore_errors: yes
+    - name: unset the release version for RHEL 6
+      command:  'subscription-manager release --unset'
+      when:
+        - ansible_distribution_major_version == "6"
+    
+    - name: set the release version for RHEL 7
+      command:  'subscription-manager release --set=7.4'
+      when:
+        - ansible_distribution_major_version == "7"
+  
+    - name: Refresh repos
+      command:  'subscription-manager repos'
+      when:
+        - ansible_distribution_major_version == "6" and ansible_distribution_major_version == "7"
+
+    - name: Disable all repos
+      command:  'subscription-manager repos --disable=*'
+
+    - name: Install Katello-Agent for RHEL 6
+      yum:
+        name: katello-agent
+        state: latest
+        enablerepo: rhel-6-server-satellite-tools-6.3-rpms
+      notify:
+        - restart_goferd
+      when:
+        - ansible_distribution_major_version == "6"
+    - name: Install virt-who for RHEL 6
+      yum:
+        name: virt-who
+        state: latest
+        enablerepo: rhel-6-server-satellite-tools-6.3-rpms,rhel-6-server-rpms
+      when:
+        - ansible_distribution_major_version == "6"
+    - name: Install Katello-Agent for RHEL 7
+      yum:
+        name: katello-agent
+        state: latest
+        enablerepo: rhel-7-server-satellite-tools-6.3-rpms
+      notify:
+        - restart_goferd
+      when:
+        - ansible_distribution_major_version == "7"
+    - name: Install virt-who for RHEL 7
+      yum:
+        name: virt-who
+        state: latest
+        enablerepo: rhel-7-server-satellite-tools-6.3-rpms,rhel-7-server-rpms
+      when:
+        - ansible_distribution_major_version == "7"
+    - name: set the release version for RHEL 6
+      command: subscription-manager release --set=6.8
+      when:
+        - ansible_distribution_major_version == "6"
+  handlers:
+    - name: restart_goferd
+      service:
+        name: goferd
+        state:  restarted

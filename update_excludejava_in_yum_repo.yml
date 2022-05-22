@@ -1,0 +1,9 @@
+---
+- name: Update yum.conf file to exclude java update
+  hosts: all
+  become: true
+  tasks:
+    - name: Update yum.conf
+      lineinfile:
+        path: /etc/yum.conf
+        line: 'exclude=java*'

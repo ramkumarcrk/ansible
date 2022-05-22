@@ -1,0 +1,22 @@
+#Use below command to get Encrypt password
+##python -c 'import crypt; print crypt.crypt("admin123", "random_salt")'
+
+---
+- name: Reset Passwd test123 as password for all users
+  hosts: all
+  become: true
+  tasks:
+    - name: reset password
+      user:
+        name: "{{ item.name }}" 
+#        comment: "{{ item.comment }}"  
+        shell: /bin/bash
+#        group: users
+        password:  $6$random_salt$xWJ6k8vLZvjdkjkzxk4aF1g9E3WdddddddddddddddddddddddRAu7uz8.bEneinWsGEaL.
+        state: present
+#    - name: Reset Pam Failed Logs
+#      command: '/usr/bin/pam_tailly2 -u {{ item.name }} -r'
+      with_items:
+        - { name: 'root' }
+#        - { name: 'usernam1' }
+#        - { name: 'username2' }

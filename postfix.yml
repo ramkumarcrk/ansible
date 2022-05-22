@@ -1,0 +1,90 @@
+
+---
+- name: SMTP Relay IP Change
+  hosts: all
+  tasks:
+    - name: Stopping Sendmail if its running.
+      service:
+        name: sendmail
+        state: stopped
+        enabled: no
+      ignore_errors: yes
+      when:
+        - ansible_distribution == "RedHat"
+        - ansible_distribution_major_version == "5" or ansible_distribution_major_version == "6" or ansible_distribution_major_version == "7"
+
+    - name: Install/Update Postfix Packages for RHEL 5
+      yum:
+        name: postfix
+        enablerepo: rhel-5-server-rpms
+        state: present
+      when:
+        - ansible_distribution == "RedHat"
+        - ansible_distribution_major_version == "5"
+    - name: Install/Update Postfix Packages for RHEL 6
+      yum:
+        name: postfix
+        enablerepo: rhel-6-server-rpms
+        state: present
+      when:
+        - ansible_distribution == "RedHat"
+        - ansible_distribution_major_version == "6"
+    - name: Install/Update Postfix Packages for RHEL 7
+      yum:
+        name: postfix
+        enablerepo: rhel-7-server-rpms
+        state: present
+      when:
+        - ansible_distribution == "RedHat"
+        - ansible_distribution_major_version == "7"
+    
+    - name: Update Parameter to bring up Postfix service
+      lineinfile:
+        path: /etc/postfix/main.cf
+        regexp: '^#?inet_interfaces'
+        line: '#inet_interfaces'
+      notify:
+        - restart_postfix
+
+    - name: Adding Parameter to bring up Postfix service
+      lineinfile:
+        path: /etc/postfix/main.cf
+        regexp: '^#?inet_protocol'
+        line: 'inet_protocol = ipv4'
+        state: present
+        backrefs: yes
+        backup: yes
+      notify:
+        - restart_postfix
+
+    
+    - name: Update IP address for new SMTP
+      lineinfile: 
+        path: /etc/postfix/main.cf
+        regexp: '^relayhost'
+        line: 'relayhost = [1.1.1.1]'
+        backrefs: yes
+        backup: yes
+      notify: 
+        - restart_postfix
+      when:
+        - ansible_distribution == "RedHat"
+        - ansible_distribution_major_version == "5" or ansible_distribution_major_version == "6" or ansible_distribution_major_version == "7"
+    - name: Ensure relayhost lines are presented
+      lineinfile:
+        path: /etc/postfix/main.cf
+        state: present
+#        regexp: '^relayhost'
+        line: 'relayhost = [1.1.1.1]'
+#        backrefs: yes
+      notify:
+        - restart_postfix
+      when:
+        - ansible_distribution == "RedHat"
+        - ansible_distribution_major_version == "5" or ansible_distribution_major_version == "6" or ansible_distribution_major_version == "7"
+  handlers:
+    - name: restart_postfix
+      service: 
+        name: postfix
+        state: restarted
+        enabled: yes

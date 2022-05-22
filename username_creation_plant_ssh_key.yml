@@ -1,0 +1,29 @@
+#Use below command to get Encrypt password
+#python -c 'import crypt; print crypt.crypt("admin123", "random_salt")'
+#creating username and planting ssh key updating sudo file
+- hosts: all
+  tasks:
+      - name: Create user
+        user: name=username comment="username Ponraj" shell=/bin/bash
+      - name: Updating Password
+        user: name=username  update_password=always password=$6$random_salt$fz6A8wzD0dkKD2qWJU0Y3jiDfsIQmMknUdXOG/pVuB82SVaOObXHWxWw7tMOFhSzOuWFSkV8Wj9nobp.CTAmd0
+
+      - file:
+          path: /home/username/.ssh
+          owner: username
+          group: username
+          mode: 0700
+          state: directory
+
+
+      - copy:
+          src: authorized_keys
+          dest: /home/username/.ssh/
+          owner: username
+          group: username
+          mode: 0600
+      - name: Sudoers | update sudoers file and validate
+        lineinfile: "dest=/etc/sudoers
+          insertafter=EOF
+          line='username ALL=(ALL) NOPASSWD: ALL'
+          state=present"

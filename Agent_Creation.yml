@@ -1,0 +1,18 @@
+#Use below command to get Encrypt password secops
+#python -c 'import crypt; print crypt.crypt("admin123", "$13random")'
+- hosts: all
+  tasks:
+      - name: Create user
+        user: name=AGENT_Agent comment="AGENT-Project-" shell=/bin/bash
+      - name: Updating Password
+        user: name=AGENT_Agent  update_password=always password=$1$jEQik7ZQddddddddddd1
+
+      - name: Sudoers | update sudoers file and validate
+        lineinfile: "dest=/etc/sudoers
+          insertafter=EOF
+          line='#Request to add AGENT_Agent '
+          line='AGENT_Agent ALL=(ALL)   ALL'
+          state=present"
+
+      - name: Update Non-Expiry
+        command: '/usr/bin/chage  -M 99999 AGENT_Agent'

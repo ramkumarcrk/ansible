@@ -1,0 +1,9 @@
+---
+- name: Gofered restart
+  hosts:  all
+  become: true
+  tasks:
+    - name: Restarting Gofered Service
+      service:
+        name: goferd
+        state:  restarted
