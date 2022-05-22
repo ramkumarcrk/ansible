@@ -1,0 +1,17 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+  - name: Get hostname
+    shell: hostname
+    register: host_name
+  - name: Check nameserver for RedHat based servers
+    shell: cat /etc/resolv.conf
+    register: version_rpm
+  - name: Create base file
+    local_action: shell echo 'hostname' | tee glibc_version.csv
+    become: no
+  - name: Write output to file
+    local_action: shell echo -e '{{ host_name.stdout }}\n{{ version_rpm.stdout }}\n' | tee -a tl_dns.csv
+    become: no
+
