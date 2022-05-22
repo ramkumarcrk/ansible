@@ -1,0 +1,8 @@
+--- 
+- hosts: all
+  tasks:
+  - name:Delete user Account
+    user: 
+     name: username
+     remove: true
+     state: absent
