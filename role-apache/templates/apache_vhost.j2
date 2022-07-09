@@ -1,0 +1,39 @@
+#
+# ANSIBLE MANAGED
+# * * * Do NOT change it manually * * *
+
+# {{ item.value.ServerName }}
+<VirtualHost {{ item.value.VirtualHost }}>
+  ServerAdmin {{ item.value.ServerAdmin }}
+  ServerName  {{ item.value.ServerName }}
+{% if item.value.ServerAlias is defined %}
+  ServerAlias {{ item.value.ServerAlias }}
+{% endif %}
+
+  ErrorLog    {{ item.value.ErrorLog }}
+  CustomLog   {{ item.value.CustomLog }}
+
+{% if item.value.DocumentRoot is defined %}
+  DocumentRoot "{{ item.value.DocumentRoot }}"
+  <Directory "{{ item.value.DocumentRoot }}">
+    Options Indexes FollowSymLinks
+    AllowOverride AuthConfig FileInfo
+    DirectoryIndex index.php index.html
+    Require all granted
+    #Allow from all
+  </Directory>
+
+{% endif %}
+{% if item.value.SSLEngine %}
+  SSLEngine on
+  SSLCertificateFile      {{ item.value.SSLCertificateFile }}
+  SSLCertificateKeyFile   {{ item.value.SSLCertificateKeyFile }}
+  SSLCertificateChainFile {{ item.value.SSLCertificateChainFile }}
+
+{% endif %}
+{% if item.value.ExtraConfig is defined %}
+  {{ item.value.ExtraConfig | indent(2) }}
+
+{% endif %}
+</VirtualHost>
+

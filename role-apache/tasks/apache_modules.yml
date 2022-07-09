@@ -1,0 +1,5 @@
+---
+- apache2_module:
+    name: "{{ item }}"
+    state: present 
+  loop: "{{ apache_modules }}"

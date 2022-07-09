@@ -1,0 +1,14 @@
+---
+- include_tasks: "{{ ansible_os_family }}.yml"
+
+# Let's try using existing apache module in Ansible Galaxy
+# TODO Enhance geerlingguy.apache to yourowncompany.apache, as it's missing some features (eg. ssl cert, modules, other conf file)
+- include_role:
+    name: geerlingguy.apache
+
+- include_tasks: php.yml
+- include_tasks: ssl_cert_files.yml
+- include_tasks: apache_modules.yml
+- include_tasks: apache_httpd_conf.yml
+- include_tasks: apache_vhosts.yml
+  

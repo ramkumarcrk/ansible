@@ -1,0 +1,27 @@
+---
+- name: httpd.conf - add ANSIBLE MANAGE info 
+  lineinfile:
+    dest: "{{ apache_server_root }}/httpd.conf"
+    regexp: "^# ANSIBLE MANAGED"
+    line: "# ANSIBLE MANAGED: * * * Do NOT change Apache config manually * * *"
+    insertbefore: BOF
+    state: present
+
+- name: httpd.conf - manage lines
+  lineinfile:
+    dest: "{{ apache_server_root }}/httpd.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+  with_items: "{{ apache_httpd_conf_lineinfile }}" 
+  notify: restart apache
+
+# Suse - APACHE_SERVER_FLAGS
+# TODO add a list of line to change? (eg. extended status, etc)
+- lineinfile:
+    dest: /etc/sysconfig/apache2
+    regexp: "^APACHE_SERVER_FLAGS="
+    line: APACHE_SERVER_FLAGS="SSL STATUS"
+    state: present
+  notify: restart apache
+  

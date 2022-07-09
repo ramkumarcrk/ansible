@@ -1,0 +1,56 @@
+---
+- block:
+  - include_tasks: apache_vhosts_conf_and_documentroot.yml
+    loop: "{{ apache_vhosts | dict2items }}"
+  
+  # - name: Deploy conf files in vhosts.d folder 
+  #   template:
+  #     dest: "{{ apache_vhosts_path }}/{{ item.key }}.conf"
+  #     src: apache_vhost.j2
+  #     # TODO: add validation
+  #     #validate: "{{ apache_daemon_path }}{{ apache_daemon }} -t -f %s"
+  #   loop: "{{ apache_vhosts | dict2items }}"
+  #   notify: restart apache
+
+  # # Create DocumentRoot if we haven't deploy the code
+  # - name: Check if DocumentRoot exists
+  #   stat:
+  #       path: undefined # required. The full path of the file/object to get the facts of.
+  #       get_checksum: yes # not required. Whether to return a checksum of the file (default sha1).
+  #       follow: no # not required. Whether to follow symlinks.
+  #       checksum_algorithm: md5 # not required. choices: md5;sha1;sha224;sha256;sha384;sha512. Algorithm to determine checksum of file. Will throw an error if the host is unable to use specified algorithm.,The remote host has to support the hashing method specified, C(md5) can be unavailable if the host is FIPS-140 compliant.
+  #       get_mime: yes # not required. Use file magic and return data about the nature of the file. this uses the 'file' utility found on most Linux/Unix systems.,This will add both `mime_type` and 'charset' fields to the return, if possible.,In 2.3 this option changed from 'mime' to 'get_mime' and the default changed to 'Yes'.
+  #       get_md5: no # not required. Whether to return the md5 sum of the file.,Will return None if not a regular file or if we're unable to use md5 (Common for FIPS-140 compliant systems).,The default of this option changed from C(yes) to C(no) in Ansible 2.5 and will be removed altogether in Ansible 2.9.,Use C(get_checksum=true) with C(checksum_algorithm=md5) to return an md5 hash under the C(checksum) return value.
+  #       get_attributes: yes # not required. Get file attributes using lsattr tool if present.
+  # - name: Make sure folder exists
+  #   file:
+  #       path: '{{ item.value.DocumentRoot }} '
+  #       state: directory
+  #       recurse: yes
+  #       group: undefined # not required. Name of the group that should own the file/directory, as would be fed to I(chown).
+  #       mode: undefined # not required. Mode the file or directory should be. For those used to I(/usr/bin/chmod) remember that modes are actually octal numbers. You must either add a leading zero so that Ansible's YAML parser knows it is an octal number (like C(0644) or C(01777)) or quote it (like C('644') or C('1777')) so Ansible receives a string and can do its own conversion from string into number.  Giving Ansible a number without following one of these rules will end up with a decimal number which will have unexpected results. As of version 1.8, the mode may be specified as a symbolic mode (for example, C(u+rwx) or C(u=rw,g=r,o=r)).
+  #       owner: undefined # not required. Name of the user that should own the file/directory, as would be fed to I(chown).
+
+
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+  # Remove extra conf files in vhosts.d
+  - name: set_fact - list of managed vhost config files
+    set_fact:
+      apache_vhosts_confs: "{{ apache_vhosts | map('regex_replace', '^(.*)$', apache_vhosts_path + '/\\1.conf') | list }}"
+
+  - name: Register {{ apache_vhosts_path }}/*.conf before removing extra .conf files
+    shell: ls -1 {{ apache_vhosts_path }}/*.conf
+    register: apache_vhosts_path_content
+    check_mode: no
+  
+  - name: Remove extra .conf files
+    file:
+      path: "{{ item }}"
+      state: absent
+    loop: "{{ apache_vhosts_path_content.stdout_lines }}"
+    when: item not in apache_vhosts_confs
+  # END - Remove extra conf files in vhosts.d
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+
+  when: apache_vhosts|length > 0

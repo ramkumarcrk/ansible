@@ -1,0 +1,44 @@
+---
+- name: Deploy conf files in vhosts.d folder 
+  template:
+    dest: "{{ apache_vhosts_path }}/{{ item.key }}.conf"
+    src: apache_vhost.j2
+    # TODO: add validation
+    #validate: "{{ apache_daemon_path }}{{ apache_daemon }} -t -f %s"
+  notify: restart apache
+
+
+# Create DocumentRoot folder when it's defined and, as a bonus, create index.html
+- block:
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+  # Make sure DocumentRoot exists
+  - name: Get {{ item.value.DocumentRoot }} folder stat
+    stat:
+      path: '{{ item.value.DocumentRoot }}'
+    register: DocumentRoot_stat
+    
+  - name: Make sure {{ item.value.DocumentRoot }} folder exists
+    file:
+        path: '{{ item.value.DocumentRoot }}'
+        state: directory
+        recurse: yes
+        mode: '0755'
+    when: not DocumentRoot_stat.stat.exists
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+  
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+  # Create index.html in DocumentRoot when it doesn't exist
+  - name: Get {{ item.value.DocumentRoot }}/index.html file stat
+    stat:
+      path: '{{ item.value.DocumentRoot }}/index.html'
+    register: DocumentRoot_index_stats
+  
+  - name: Create {{ item.value.DocumentRoot }}/index.html when it doesn't exist
+    copy:
+        dest: '{{ item.value.DocumentRoot }}/index.html'
+        content: "Hello World! You can start deploying your code to <b>{{ ansible_fqdn }}:{{ item.value.DocumentRoot }}</b>"
+        mode: '0644'
+    when: not DocumentRoot_index_stats.stat.exists
+  # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+
+  when: item.value.DocumentRoot is defined

@@ -1,0 +1,9 @@
+.vagrant*/
+.idea/
+.peru/
+
+*.retry
+*/__pycache__
+*.pyc
+
+*__dev__*

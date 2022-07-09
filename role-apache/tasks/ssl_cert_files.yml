@@ -1,0 +1,18 @@
+---
+
+- name: Ensure {{ apache_ssl_path }} exists
+  file:
+    path: "{{ apache_ssl_path }}"
+    state: directory 
+
+- name: Populate ssl cert files
+  copy:
+    dest: "{{ apache_ssl_path }}/{{ item }}"
+    content: "{{ ssl_certs[item] }}"
+    # TODO: add validation
+    #validate: "{{ apache_daemon_path }}{{ apache_daemon }} -t -f %s"
+  loop: "{{ apache_ssl_certs }}"
+  notify: restart apache
+  no_log: yes
+
+# TODO remove extra ssl certs in {{ apache_ssl_path }} ?

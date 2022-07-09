@@ -1,0 +1,5 @@
+---
+- name: Install PHP
+  zypper:
+    name: "{{ php_packages }}"
+    state: present
